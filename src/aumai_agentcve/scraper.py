@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -46,12 +46,12 @@ def _parse_nvd_datetime(value: str) -> datetime:
     # NVD uses ISO 8601 format, e.g. "2024-01-15T12:34:56.123"
     for fmt in ("%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
         try:
-            return datetime.strptime(value, fmt).replace(tzinfo=timezone.utc)
+            return datetime.strptime(value, fmt).replace(tzinfo=UTC)
         except ValueError:
             continue
     # Fallback: current time to avoid hard failure
     logger.warning("Could not parse NVD datetime %r, using now()", value)
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=UTC)
 
 
 def parse_nvd_entry(entry: dict[str, Any]) -> CVERecord | None:
@@ -89,7 +89,11 @@ def parse_nvd_entry(entry: dict[str, Any]) -> CVERecord | None:
                 severity = _severity_from_cvss_score(cvss_score)
 
             published_str: str = entry.get("published", "")
-            published_date = _parse_nvd_datetime(published_str) if published_str else datetime.now(tz=timezone.utc)
+            published_date = (
+                _parse_nvd_datetime(published_str)
+                if published_str
+                else datetime.now(tz=UTC)
+            )
 
             # Affected packages from CPE configuration
             affected_packages: list[str] = []
@@ -152,7 +156,11 @@ def parse_nvd_entry(entry: dict[str, Any]) -> CVERecord | None:
             severity = _severity_from_cvss_score(cvss_score)
 
         published_str = entry.get("publishedDate", "")
-        published_date = _parse_nvd_datetime(published_str) if published_str else datetime.now(tz=timezone.utc)
+        published_date = (
+            _parse_nvd_datetime(published_str)
+            if published_str
+            else datetime.now(tz=UTC)
+        )
 
         # Affected packages from CPE nodes
         affected_packages = []
@@ -266,8 +274,14 @@ class GitHubAdvisoryParser:
             if cvss_score and severity == CVESeverity.unknown:
                 severity = _severity_from_cvss_score(cvss_score)
 
-            published_str: str = advisory.get("publishedAt", advisory.get("published_at", ""))
-            published_date = _parse_nvd_datetime(published_str) if published_str else datetime.now(tz=timezone.utc)
+            published_str: str = advisory.get(
+                "publishedAt", advisory.get("published_at", "")
+            )
+            published_date = (
+                _parse_nvd_datetime(published_str)
+                if published_str
+                else datetime.now(tz=UTC)
+            )
 
             # Extract affected packages
             affected_packages: list[str] = []

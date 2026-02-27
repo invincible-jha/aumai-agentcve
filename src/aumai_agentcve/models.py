@@ -20,7 +20,9 @@ class CVERecord(BaseModel):
     """Represents a single CVE record from NVD or GitHub Advisory."""
 
     cve_id: str = Field(..., description="CVE identifier, e.g. CVE-2024-12345")
-    description: str = Field(..., description="Human-readable vulnerability description")
+    description: str = Field(
+        ..., description="Human-readable vulnerability description"
+    )
     severity: CVESeverity = Field(default=CVESeverity.unknown)
     cvss_score: float | None = Field(default=None, ge=0.0, le=10.0)
     published_date: datetime

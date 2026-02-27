@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -127,18 +127,24 @@ class DependencyScanner:
                     pkg = poetry_match.group(1)
                     version = poetry_match.group(2).lstrip("^~>=<!")
                     if pkg.lower() not in ("python",):
-                        deps.append(DependencyInfo(name=pkg, version=version or "unknown"))
+                        deps.append(
+                            DependencyInfo(name=pkg, version=version or "unknown")
+                        )
 
         return deps
 
-    def _parse_pep517_dep_list(self, items_str: str, deps: list[DependencyInfo]) -> None:
+    def _parse_pep517_dep_list(
+        self, items_str: str, deps: list[DependencyInfo]
+    ) -> None:
         """Parse comma-separated dependency strings from a TOML array."""
         for item in items_str.split(","):
             item = item.strip().strip('"\'')
             if item:
                 self._parse_pep517_specifier(item, deps)
 
-    def _parse_pep517_specifier(self, specifier: str, deps: list[DependencyInfo]) -> None:
+    def _parse_pep517_specifier(
+        self, specifier: str, deps: list[DependencyInfo]
+    ) -> None:
         """Parse a single PEP 508 dependency specifier."""
         # Remove extras like [security]
         specifier = re.sub(r"\[.*?\]", "", specifier).strip()
@@ -284,7 +290,7 @@ class ReportGenerator:
 
         return VulnerabilityReport(
             scan_id=str(uuid.uuid4()),
-            timestamp=datetime.now(tz=timezone.utc),
+            timestamp=datetime.now(tz=UTC),
             project_name=project_name,
             total_dependencies=len(dependencies),
             vulnerable_dependencies=len(vulnerable_dep_names),
